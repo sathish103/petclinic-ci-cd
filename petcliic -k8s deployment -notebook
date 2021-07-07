@@ -1,0 +1,139 @@
+create the RDS in your cluster region
+
+rds security
+-------------
+(3306-----anywhere)i am using only for practice purpose 
+connect to the rds
+
+create the Databases 
+crete the user 
+update pom.xml and schema.xml
+
+create the ec2 instance   install docker and attach the ecr role
+ i am create dockerfile 
+
+FROM maven:3.6.3-openjdk-11 AS maven
+RUN apt-get update -y && apt-get upgrade -y && apt-get install git -y && apt-get install unzip -y
+WORKDIR /opt
+RUN wget https://mirrors.estointernet.in/apache/tomcat/tomcat-9/v9.0.48/bin/apache-tomcat-9.0.48.zip
+RUN  unzip apache-tomcat-9.0.48.zip
+RUN mv apache-tomcat-9.0.48 tomcat
+RUN chmod -R 700 tomcat
+WORKDIR /opt
+RUN git clone https://github.com/prasad888/spring-framework-petclinic.git
+WORKDIR /opt/spring-framework-petclinic
+RUN mvn clean package
+WORKDIR /opt/spring-framework-petclinic/target
+RUN cp -R petclinic.war /opt/tomcat/webapps/
+EXPOSE 8080
+CMD chmod +x /opt/tomcat/bin/catalina.sh
+CMD /opt/tomcat/bin/catalina.sh run
+
+
+build the docker (docker build -t petclinic .) 
+push the docker image in ecr
+
+EKs
+----------
+create the ec2 instance and attach the AdministratorAccess role
+
+install the aws cli,kubectl,aws-iam-authenticator,and terraform
+
+this is the kubectl installation link(https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
+
+this is the iam-authenticator installation link(https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html)
+
+this is the terraform installation (https://www.terraform.io/downloads.html)
+
+this the cluster creation link(https://learn.hashicorp.com/tutorials/terraform/eks)
+
+finally recive the output and copy the output
+
+login to node create the folder (.kube) 
+inside folder create a file called (config) in a file copy the output of cluster 
+
+create the namespace
+kubectl create namespace (namespacename)
+
+creating the yaml files
+--------------------------
+deployment.yaml file is
+------------------------ 
+vi deployment.yaml
+
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: petclinic-deployment
+spec:
+  selector:
+    matchLabels:
+      app: petclinic-deployment
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: petclinic-deployment
+    spec:
+      containers:
+      - name: petclinic-deployment
+        image:  982775349412.dkr.ecr.us-east-2.amazonaws.com/pet:latest
+        ports:
+        - containerPort: 8080
+save the file and run the yaml file (use below command)
+kubectl apply -f Deployment.yaml
+
+svc.yaml file is
+-----------------------
+vi svc.yaml
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: petclinic-service
+  namespace: animals
+spec:
+  selector:
+    app: petclinic-deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
+save the file and run the yaml file (use below command )
+kubectl apply -f svc.yaml
+
+
+ing.yaml file is 
+------------------
+vi ing.yaml
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: petclinic-ing
+  namespace: animals
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: 
+
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: petclinic-service
+          servicePort: 80
+
+save the file and run the yaml file (use below command )
+kubectl apply -f ing.yaml
+
+check the pod,service and ingress (use this commands)
+kubectl get Deployment -n (namespacename)
+kubectl get svc -n (namespacename)
+kubectl get ing -n (namespacename)
+
+
+take the endpoint of the ingress and access the application
+
