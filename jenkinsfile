@@ -28,3 +28,26 @@ pipeline {
         }
     }
 }
+
+
+
+
+pipeline {
+    agent  {
+        label 'slave1'
+        
+    }
+    stages {
+        stage('checkout') {
+            steps {
+            git branch: 'develop', url: 'https://github.com/prasad888/appdemo.git'
+            }
+        }
+        stage('copy server') {
+            steps {
+                sh 'scp /home/ec2-user/slave1/workspace/dev-appdeploy/index.html root@10.1.3.195:/opt'
+            }
+        }
+        
+    }
+}
